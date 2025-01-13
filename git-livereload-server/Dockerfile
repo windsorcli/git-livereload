@@ -1,19 +1,38 @@
 # Use an Alpine base image
 FROM alpine:3.20.3
 
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Create the necessary directories and set ownership to the non-root user
-RUN mkdir -p /repos/git /repos/serve /repos/mount /var && \
-    chown -R appuser:appgroup /repos /var
-
 # Install git, git-daemon, rsync, openssh, nginx, and supervisor
 RUN apk update && apk add --no-cache bash git git-daemon rsync \
     inotify-tools nginx fcgiwrap apache2-utils supervisor openssh-client \
     curl
 
+# Create a non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Ensure the non-root user has proper access to Nginx log directories
+RUN mkdir -p /var/log/nginx && \
+    chown -R appuser:appgroup /var/log/nginx
+
+# Redirect logs to stdout and stderr (as root)
+RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
+    ln -sf /dev/stderr /var/log/nginx/error.log
+
+# Create the necessary directories and set ownership to the non-root user
+RUN mkdir -p /repos/git /repos/serve /repos/mount && \
+    chown -R appuser:appgroup /repos
+
+# Switch to the non-root user
 USER appuser
+
+# # Create a non-root user
+# RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Create the necessary directories and set ownership to the non-root user
+# RUN mkdir -p /repos/git /repos/serve /repos/mount /var && \
+#     chown -R appuser:appgroup /repos /var
+
+
+# USER appuser
 
 # Copy the init script and supervisord configuration into the image
 COPY init.sh /init.sh
