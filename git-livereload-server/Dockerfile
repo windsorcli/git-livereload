@@ -22,18 +22,7 @@ RUN mkdir -p /repos/git /repos/serve /repos/mount && \
     chown -R appuser:appgroup /repos
 
 # Switch to the non-root user
-USER appuser
-
-# # Create a non-root user
-# RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Create the necessary directories and set ownership to the non-root user
-# RUN mkdir -p /repos/git /repos/serve /repos/mount /var && \
-#     chown -R appuser:appgroup /repos /var
-
-
-# USER appuser
-
+#
 # Copy the init script and supervisord configuration into the image
 COPY init.sh /init.sh
 COPY sync.sh /sync.sh
