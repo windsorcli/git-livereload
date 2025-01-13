@@ -1,7 +1,11 @@
 # Use an Alpine base image
 FROM alpine:3.20.3
 
-USER root
+# Create a non-root user
+RUN useradd -m myuser
+
+# Switch to the non-root user
+USER myuser
 
 # Install git, git-daemon, rsync, openssh, nginx, and supervisor
 RUN apk update && apk add --no-cache bash git git-daemon rsync \
