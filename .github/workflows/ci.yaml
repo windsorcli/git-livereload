@@ -14,36 +14,54 @@ jobs:
 
   checks:
     uses: windsorcli/blueprint/.github/workflows/checks.yaml@main
-  
     # uses:  windsorcli/git-livereload/github/workflows/checks.yaml@initial-code
 
-  build-and-test:
-    runs-on: ${{ matrix.os }}
+  build-and-publish:
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [amd64, arm64]
-        exclude:
-          - os: windows-latest
-            arch: arm64
-          - os: windows-latest
-            arch: amd64
-          - os: macos-latest
-            arch: arm64
-          - os: macos-latest
-            arch: amd64
-          - os: ubuntu-latest
-            arch: arm64
-
+        include:
+          - context: git-livereload-server
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Install Aqua
-        uses: aquaproj/aqua-installer@f13c5d2f0357708d85477aabe50fd3f725528745 # v3.1.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      - name: Cache Docker layers
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
         with:
-          aqua_version: v2.42.2
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-      - name: Install tools
-        run: aqua install
+      - name: Login to GitHub Container Registry
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine Tag Name
+        run: |
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+          else
+            echo "VERSION=latest" >> $GITHUB_ENV
+          fi
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: ./docker/${{ matrix.context }}
+          file: ./docker/${{ matrix.context }}/Dockerfile
+          push: ${{ startsWith(github.ref, 'refs/tags/') }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.context }}:${{ env.VERSION }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
