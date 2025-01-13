@@ -1,0 +1,7 @@
+version: '3.7'
+
+services:
+  git-livereload-server:
+    build:
+      context: ./git-livereload-server
+    image: ${REGISTRY_URL}/git-livereload-server:${IMAGE_TAG:-latest}
