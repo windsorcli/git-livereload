@@ -22,7 +22,8 @@ RUN mkdir -p /repos/git /repos/serve /repos/mount && \
     chown -R appuser:appgroup /repos
 
 # Switch to the non-root user
-#
+USER appuser
+
 # Copy the init script and supervisord configuration into the image
 COPY init.sh /init.sh
 COPY sync.sh /sync.sh

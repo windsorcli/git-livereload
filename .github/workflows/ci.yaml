@@ -40,10 +40,6 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           scanners: 'vuln,secret,misconfig'
-
-      # - name: Run TrivyCheck
-      #   run: |
-      #     trivy fs --scanners vuln,secret,misconfig . || exit 1
   
   build-and-publish:
     runs-on: ubuntu-latest
