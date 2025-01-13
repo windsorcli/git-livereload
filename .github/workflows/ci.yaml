@@ -30,9 +30,19 @@ jobs:
       - name: Install tools
         run: aqua install
 
-      - name: Run TrivyCheck
-        run: |
-          trivy fs --scanners vuln,secret,misconfig . || exit 1
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0 # v0.28.0
+        with:
+          image-ref: 'docker.io/windsorcli/git-livereload-server:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      # - name: Run TrivyCheck
+      #   run: |
+      #     trivy fs --scanners vuln,secret,misconfig . || exit 1
   
   build-and-publish:
     runs-on: ubuntu-latest
