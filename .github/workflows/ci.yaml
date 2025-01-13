@@ -70,7 +70,7 @@ jobs:
             VERSION=${GITHUB_REF#refs/tags/}
             echo "VERSION=$VERSION" >> $GITHUB_ENV
           else
-            echo "VERSION=latest" >> $GITHUB_ENV
+            echo "VERSION=v0.2.1" >> $GITHUB_ENV
           fi
 
       - name: Build and Push Docker image
