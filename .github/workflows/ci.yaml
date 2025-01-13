@@ -11,8 +11,11 @@ on:
       - main
 
 jobs:
+
   checks:
-    uses: ./github/workflows/checks.yaml@initial-code
+    uses: windsorcli/blueprint/.github/workflows/checks.yaml@main
+  
+    # uses:  windsorcli/git-livereload/github/workflows/checks.yaml@initial-code
 
   build-and-test:
     runs-on: ${{ matrix.os }}
