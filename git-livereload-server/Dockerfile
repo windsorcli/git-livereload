@@ -6,7 +6,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Create the necessary directories and set ownership to the non-root user
 RUN mkdir -p /repos/git /repos/serve /repos/mount && \
-    chown -R appuser:appgroup /repos /var/log/nginx/access.log
+    chown -R appuser:appgroup /repos /var
 
 # Install git, git-daemon, rsync, openssh, nginx, and supervisor
 RUN apk update && apk add --no-cache bash git git-daemon rsync \
