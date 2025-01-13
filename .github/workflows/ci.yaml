@@ -32,7 +32,7 @@ jobs:
 
       - name: Run TrivyCheck
         run: |
-          trivy fs --scanners vuln,secret,misconfig .
+          trivy fs --scanners vuln,secret,misconfig . || exit 1
   
   build-and-publish:
     runs-on: ubuntu-latest
