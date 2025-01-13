@@ -1,6 +1,8 @@
 # Use an Alpine base image
 FROM alpine:3.20.3
 
+USER nobody
+
 # Install git, git-daemon, rsync, openssh, nginx, and supervisor
 RUN apk update && apk add --no-cache bash git git-daemon rsync \
     inotify-tools nginx fcgiwrap apache2-utils supervisor openssh-client \
@@ -22,6 +24,10 @@ RUN git config --global init.defaultBranch main
 # Redirect nginx logs to stdout and stderr
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
+
+# Add a simple health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl --fail http://localhost/ || exit 1
 
 # Set the supervisord as the command to run when the container starts
 CMD ["/init.sh"]
