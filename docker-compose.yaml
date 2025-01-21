@@ -5,3 +5,5 @@ services:
     build:
       context: ./git-livereload
     image: ${REGISTRY_URL}/git-livereload:${IMAGE_TAG:-latest}
+    volumes:
+      - .:/repos/mount/blueprint
