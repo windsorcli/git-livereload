@@ -7,7 +7,6 @@ GIT_PASSWORD=${GIT_PASSWORD:-p@$$w0rd}
 
 setup_htpasswd() {
   htpasswd -bc /etc/nginx/.htpasswd "$GIT_USERNAME" "$GIT_PASSWORD"
-  chown nginx:nginx /etc/nginx/.htpasswd
   chmod 0660 /etc/nginx/.htpasswd
 }
 
@@ -50,7 +49,7 @@ initialize_repository() {
 }
 
 adjust_repo_permissions() {
-  chown -R nginx:nginx /repos/git
+  chown -R appuser:appgroup /repos/git
   chmod -R u+rwX,go+rX,go-w /repos/git
 }
 
