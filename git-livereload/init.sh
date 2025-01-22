@@ -7,8 +7,7 @@ GIT_PASSWORD=${GIT_PASSWORD:-p@$$w0rd}
 
 setup_htpasswd() {
   htpasswd -bc /etc/nginx/.htpasswd "$GIT_USERNAME" "$GIT_PASSWORD"
-  chown nginx:nginx /etc/nginx/.htpasswd
-  chmod 0660 /etc/nginx/.htpasswd
+  chmod 0640 /etc/nginx/.htpasswd
 }
 
 configure_git() {
@@ -49,11 +48,6 @@ initialize_repository() {
   git push -u origin main
 }
 
-adjust_repo_permissions() {
-  chown -R nginx:nginx /repos/git
-  chmod -R u+rwX,go+rX,go-w /repos/git
-}
-
 # Main execution
 setup_htpasswd
 configure_git
@@ -64,5 +58,4 @@ for dir in /repos/mount/*; do
   initialize_repository "$repo_name" "$dir"
 done
 
-adjust_repo_permissions
 /usr/bin/supervisord -c /etc/supervisord.conf

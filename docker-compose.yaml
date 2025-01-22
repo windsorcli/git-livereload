@@ -1,7 +1,7 @@
-version: '3.7'
-
 services:
   git-livereload:
     build:
       context: ./git-livereload
-    image: ${REGISTRY_URL}/git-livereload:${IMAGE_TAG:-latest}
+    image: ${REGISTRY_URL:+${REGISTRY_URL}/}git-livereload:${IMAGE_TAG:-latest}
+    volumes:
+      - ${WINDSOR_PROJECT_ROOT-.}:/repos/mount/blueprint
