@@ -31,7 +31,8 @@ find "$SRC_DIR" -type f | sort
 test_rsync() {
     local description="$1"
     shift
-    local dest_subdir="$DEST_DIR/$(echo "$description" | tr ' ' '_' | tr '[:upper:]' '[:lower:]')"
+    local dest_subdir
+    dest_subdir="$DEST_DIR/$(echo "$description" | tr ' ' '_' | tr '[:upper:]' '[:lower:]')"
     mkdir -p "$dest_subdir"
     
     echo ""
