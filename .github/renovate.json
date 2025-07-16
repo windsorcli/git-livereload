@@ -1,43 +1,53 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-
   "extends": [
     "config:recommended",
-    "github>aquaproj/aqua-renovate-config#2.7.5",
+    "github>aquaproj/aqua-renovate-config#2.8.2",
     ":dependencyDashboard"
   ],
   "packageRules": [
     {
       "description": "Pin GitHub Actions to specific commit SHAs",
-      "matchManagers": ["github-actions"],
-      "matchPackagePatterns": [".*"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "versioning": "github-tags",
       "pinDigests": true,
       "enabled": true,
       "automerge": true,
       "automergeType": "pr",
-      "automergeStrategy": "squash"
+      "automergeStrategy": "squash",
+      "matchPackageNames": [
+        "/.*/"
+      ]
     },
     {
-      "matchUpdateTypes": ["major", "minor", "patch"],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
       "enabled": true,
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash",
-      "labels": ["dependencies"]
+      "labels": [
+        "dependencies"
+      ]
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/ci\\.yaml$"],
+      "managerFilePatterns": [
+        "/^\\.github/workflows/ci\\.yaml$/"
+      ],
       "matchStrings": [
         "checks\\.yaml@(?<currentValue>v[\\d\\.]+)"
       ],
       "depNameTemplate": "windsorcli/git-livereload",
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "windsorcli/git-livereload",
-      "lookupNameTemplate": "windsorcli/git-livereload",
       "versioningTemplate": "semver"
     }
   ],
