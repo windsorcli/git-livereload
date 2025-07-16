@@ -43,7 +43,7 @@ jobs:
           # Find all shell scripts and run shellcheck
           find . -name "*.sh" -print0 | xargs -0 shellcheck
 
-  test-rsync-filtering:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -55,7 +55,7 @@ jobs:
       - name: Run basic rsync filtering tests
         run: |
           cd test
-          ./test-rsync-filtering.sh
+          ./test-filtering.sh
 
       - name: Run improved rsync filtering tests
         run: |
