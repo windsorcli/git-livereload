@@ -57,17 +57,6 @@ jobs:
           cd test
           ./test-filtering.sh
 
-      - name: Run improved rsync filtering tests
-        run: |
-          cd test
-          ./test-improved-filtering.sh
-
-      - name: Verify test scripts are executable
-        run: |
-          test -x test/test-rsync-filtering.sh
-          test -x test/test-improved-filtering.sh
-          echo "All test scripts are executable"
-
   trivy:
     runs-on: ubuntu-latest
     steps:

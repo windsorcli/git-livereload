@@ -4,18 +4,11 @@ This directory contains test scripts for the git-livereload system's rsync filte
 
 ## Available Tests
 
-### test-rsync-filtering.sh
+### test-filtering.sh
 Basic test script that demonstrates fundamental rsync include/exclude patterns.
 
 ```bash
-./test-rsync-filtering.sh
-```
-
-### test-improved-filtering.sh
-Advanced test script that demonstrates the improved rule ordering system, showing how includes and excludes work together properly.
-
-```bash
-./test-improved-filtering.sh
+./test-filtering.sh
 ```
 
 This test specifically demonstrates:
