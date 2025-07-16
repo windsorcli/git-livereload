@@ -2,6 +2,7 @@
 set -eou pipefail
 
 RSYNC_EXCLUDE=${RSYNC_EXCLUDE:-}
+RSYNC_INCLUDE=${RSYNC_INCLUDE:-}
 GIT_USERNAME=${GIT_USERNAME:-git}
 GIT_PASSWORD=${GIT_PASSWORD:-p@$$w0rd}
 
@@ -15,13 +16,81 @@ configure_git() {
   git config --global user.email "auto-commit@localhost"
 }
 
-declare -a exclude_args=('--exclude=.git')
-build_exclude_args() {
+declare -a rsync_args=('--exclude=.git')
+
+# Build all rsync filtering arguments in proper order
+build_rsync_args() {
+  local -A included_dirs=()
+  local -a traversal_rules=()
+  local -a content_rules=()
+  local -a exclude_rules=()
+  
+  # Process includes first to generate traversal and content rules
+  if [ -n "$RSYNC_INCLUDE" ]; then
+    IFS=',' read -ra INCLUDES <<< "$RSYNC_INCLUDE"
+    for include in "${INCLUDES[@]}"; do
+      [[ -n "$include" ]] || continue
+      
+      # Strip trailing slashes for consistent processing
+      include="${include%/}"
+      
+      # Generate include rules for each path component to allow directory traversal
+      local path_components=()
+      local current_path=""
+      
+      # Split path into components
+      IFS='/' read -ra path_parts <<< "$include"
+      for part in "${path_parts[@]}"; do
+        [[ -n "$part" ]] || continue
+        if [[ -n "$current_path" ]]; then
+          current_path="$current_path/$part"
+        else
+          current_path="$part"
+        fi
+        path_components+=("$current_path")
+      done
+      
+      # Add include rules for directory traversal (all path components except the last)
+      for ((i=0; i<${#path_components[@]}-1; i++)); do
+        local dir_path="${path_components[i]}"
+        if [[ -z "${included_dirs[$dir_path]:-}" ]]; then
+          traversal_rules+=("--include=$dir_path/")
+          included_dirs[$dir_path]=1
+        fi
+      done
+      
+      # Add include rule for the final path (include all contents with /***)
+      if [[ ${#path_components[@]} -gt 0 ]]; then
+        local final_path="${path_components[-1]}"
+        content_rules+=("--include=$final_path/***")
+      fi
+    done
+  fi
+  
+  # Process excludes
   if [ -n "$RSYNC_EXCLUDE" ]; then
     IFS=',' read -ra EXCLUDES <<< "$RSYNC_EXCLUDE"
     for exclude in "${EXCLUDES[@]}"; do
-      exclude_args+=("--exclude=$exclude")
+      [[ -n "$exclude" ]] && exclude_rules+=("--exclude=$exclude")
     done
+  fi
+  
+  # Build final args array in correct order:
+  # 1. Start with base exclusions
+  rsync_args=('--exclude=.git')
+  
+  # 2. Add directory traversal includes
+  rsync_args+=("${traversal_rules[@]}")
+  
+  # 3. Add excludes (these need to come before content includes for proper precedence)
+  rsync_args+=("${exclude_rules[@]}")
+  
+  # 4. Add content includes
+  rsync_args+=("${content_rules[@]}")
+  
+  # 5. Add final exclude-all rule when includes are specified
+  if [[ ${#content_rules[@]} -gt 0 ]]; then
+    rsync_args+=("--exclude=*")
   fi
 }
 
@@ -41,7 +110,7 @@ initialize_repository() {
   git remote add origin "file:///repos/git/$repo_name.git"
 
   # Sync files and make initial commit
-  rsync -av "${exclude_args[@]}" "$dir/" .
+  rsync -av "${rsync_args[@]}" "$dir/" .
   git add .
   git commit -m 'Initial commit'
   git branch -m main
@@ -51,7 +120,7 @@ initialize_repository() {
 # Main execution
 setup_htpasswd
 configure_git
-build_exclude_args
+build_rsync_args
 
 for dir in /repos/mount/*; do
   repo_name=$(basename "$dir")

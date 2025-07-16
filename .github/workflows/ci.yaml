@@ -43,6 +43,31 @@ jobs:
           # Find all shell scripts and run shellcheck
           find . -name "*.sh" -print0 | xargs -0 shellcheck
 
+  test-rsync-filtering:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Run basic rsync filtering tests
+        run: |
+          cd test
+          ./test-rsync-filtering.sh
+
+      - name: Run improved rsync filtering tests
+        run: |
+          cd test
+          ./test-improved-filtering.sh
+
+      - name: Verify test scripts are executable
+        run: |
+          test -x test/test-rsync-filtering.sh
+          test -x test/test-improved-filtering.sh
+          echo "All test scripts are executable"
+
   trivy:
     runs-on: ubuntu-latest
     steps:
