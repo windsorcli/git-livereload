@@ -14,6 +14,7 @@ setup_htpasswd() {
 configure_git() {
   git config --global user.name "Auto-commit"
   git config --global user.email "auto-commit@localhost"
+  git config --global init.defaultBranch main
 }
 
 declare -a rsync_args=('--exclude=.git')
@@ -94,37 +95,17 @@ build_rsync_args() {
   fi
 }
 
-initialize_repository() {
-  local repo_name="$1"
-  local dir="$2"
 
-  # Clean out existing directories
-  rm -rf "/repos/git/$repo_name.git" "/repos/serve/$repo_name"
-
-  # Initialize bare and non-bare repositories
-  git init --bare "/repos/git/$repo_name.git"
-  mkdir -p "/repos/serve/$repo_name"
-  cd "/repos/serve/$repo_name" || exit
-  git config --global --add safe.directory "/repos/serve/$repo_name"
-  git init
-  git remote add origin "file:///repos/git/$repo_name.git"
-
-  # Sync files and make initial commit
-  rsync -av "${rsync_args[@]}" "$dir/" .
-  git add .
-  git commit -m 'Initial commit'
-  git branch -m main
-  git push -u origin main
-}
 
 # Main execution
+echo "Starting initialization..."
 setup_htpasswd
 configure_git
 build_rsync_args
 
-for dir in /repos/mount/*; do
-  repo_name=$(basename "$dir")
-  initialize_repository "$repo_name" "$dir"
-done
+echo "Setting up directory structure..."
+mkdir -p /repos/mount /repos/git /repos/serve
+echo "Repository initialization will be handled dynamically by sync service"
 
-/usr/bin/supervisord -c /etc/supervisord.conf
+echo "Starting supervisord..."
+exec /usr/bin/supervisord -c /etc/supervisord.conf

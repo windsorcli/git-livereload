@@ -128,6 +128,11 @@ handle_git_operations() {
     git commit -m "Autocommit: $timestamp"
     git pull --rebase origin main
     git push origin main
+    
+    # Show commit SHA of last push
+    local commit_sha
+    commit_sha=$(git rev-parse HEAD)
+    echo "INFO: Last commit pushed: $commit_sha"
 
     # Send webhook if URL is set
     if [[ -n "$WEBHOOK_URL" ]]; then
@@ -141,16 +146,56 @@ handle_git_operations() {
   fi
 }
 
+# Initialize repository if it doesn't exist
+initialize_repository() {
+  local repo_name="$1"
+  local source_dir="$2"
+  
+  if [ ! -d "/repos/git/$repo_name.git" ] || [ ! -d "/repos/serve/$repo_name" ]; then
+    echo "Initializing new repository: $repo_name"
+    
+    # Clean out existing directories
+    rm -rf "/repos/git/$repo_name.git" "/repos/serve/$repo_name"
+
+    # Initialize bare and non-bare repositories
+    git init --bare "/repos/git/$repo_name.git"
+    mkdir -p "/repos/serve/$repo_name"
+    cd "/repos/serve/$repo_name" || return
+    git config --global --add safe.directory "/repos/serve/$repo_name"
+    git init
+    git remote add origin "file:///repos/git/$repo_name.git"
+
+    # Sync files and make initial commit
+    rsync -av "${rsync_args[@]}" "$source_dir/" .
+    git add .
+    git commit -m 'Initial commit'
+    git branch -m main
+    git push -u origin main
+    
+    echo "Repository $repo_name initialized successfully"
+  fi
+}
+
 # Main execution
 build_rsync_args
 build_protect_args
 
 while true; do
-  for dir in /repos/mount/*; do
-    repo_name=$(basename "$dir")
-    
-    handle_sync "$repo_name"
-    handle_git_operations "/repos/serve/$repo_name"
-  done
+  # Check if mount directory exists and has content
+  if [ -d "/repos/mount" ] && [ -n "$(ls -A /repos/mount 2>/dev/null)" ]; then
+    for dir in /repos/mount/*; do
+      if [ -d "$dir" ]; then
+        repo_name=$(basename "$dir")
+        
+        # Initialize repository if needed (handles new repositories dynamically)
+        initialize_repository "$repo_name" "$dir"
+        
+        handle_sync "$repo_name"
+        handle_git_operations "/repos/serve/$repo_name"
+      fi
+    done
+  else
+    echo "No repositories found in /repos/mount, waiting..."
+  fi
   sleep 1
 done
