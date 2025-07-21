@@ -141,27 +141,28 @@ Process ID: $$
 ## Filtering Configuration
 EOF
   
-  # Add rsync configuration details
-  if [[ -n "$RSYNC_INCLUDE" ]]; then
-    echo "Include patterns: $RSYNC_INCLUDE" >> "$info_file"
-  fi
-  
-  if [[ -n "$RSYNC_EXCLUDE" ]]; then
-    echo "Exclude patterns: $RSYNC_EXCLUDE" >> "$info_file"
-  fi
-  
-  if [[ -n "$RSYNC_PROTECT" ]]; then
-    echo "Protected patterns: $RSYNC_PROTECT" >> "$info_file"
-  fi
-  
-  # Add file count information
+  # Add rsync configuration details and file count information
   local file_count
   file_count=$(find "$work_dir" -type f ! -name ".git-livereload-info" ! -path "*/.git/*" | wc -l)
-  { echo "Source files synced: $file_count"; } >> "$info_file"
   
-  echo "" >> "$info_file"
-  echo "For more information about git-livereload, visit:" >> "$info_file"
-  echo "https://github.com/windsorcli/git-livereload" >> "$info_file"
+  {
+    if [[ -n "$RSYNC_INCLUDE" ]]; then
+      echo "Include patterns: $RSYNC_INCLUDE"
+    fi
+    
+    if [[ -n "$RSYNC_EXCLUDE" ]]; then
+      echo "Exclude patterns: $RSYNC_EXCLUDE"
+    fi
+    
+    if [[ -n "$RSYNC_PROTECT" ]]; then
+      echo "Protected patterns: $RSYNC_PROTECT"
+    fi
+    
+    echo "Source files synced: $file_count"
+    echo ""
+    echo "For more information about git-livereload, visit:"
+    echo "https://github.com/windsorcli/git-livereload"
+  } >> "$info_file"
 }
 
 # Perform Git operations in a separate function for clarity
