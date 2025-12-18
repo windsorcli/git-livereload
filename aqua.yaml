@@ -12,4 +12,4 @@ registries:
     ref: v4.440.0 # renovate: depName=aquaproj/aqua-registry
 packages:
   - name: docker/cli@v27.4.1
-  - name: docker/compose@v5.0.0
+  - name: docker/compose@v5.0.1
