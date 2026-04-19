@@ -185,7 +185,7 @@ handle_git_operations() {
     echo "INFO: Last commit pushed: $commit_sha"
 
     # Send webhook if URL is set
-    if [[ -n "$WEBHOOK_URL" ]]; then
+    if [[ -n "${WEBHOOK_URL:-}" ]]; then
       local curl_opts="-X POST -H 'Content-Type: application/json' -s -d '{\"event\":\"commit_pushed\",\"timestamp\":\"$timestamp\"}'"
       if [[ "$VERIFY_SSL" == "false" ]]; then
         curl_opts="-k $curl_opts"
