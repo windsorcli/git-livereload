@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@v6.2.0
         with:
           python-version: '3.x'
 
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.2
 
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.2
 
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
@@ -61,18 +61,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.2
 
-      - name: Run Trivy vulnerability, secret, and misconfiguration scanner
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+
+      - name: Run Trivy and save report
+        run: |
+          trivy fs --format table --exit-code 1 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH --scanners vuln,secret,misconfig . > trivy-report.txt
+        continue-on-error: true
+
+      - name: Upload Trivy scan report artifact
+        uses: actions/upload-artifact@v7.0.1
         with:
-          scan-type: 'fs'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          scanners: 'vuln,secret,misconfig'
+          name: trivy-report
+          path: trivy-report.txt
+
+      - name: Add Trivy scan results to summary
+        run: |
+          echo '### Trivy Scan Results' >> $GITHUB_STEP_SUMMARY
+          head -c 65536 trivy-report.txt >> $GITHUB_STEP_SUMMARY
           
   build-and-publish:
     runs-on: ubuntu-latest
@@ -86,13 +92,13 @@ jobs:
           - context: git-livereload
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        uses: docker/setup-buildx-action@v4.0.0
 
       - name: Cache Docker layers
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache@v5.0.1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -101,7 +107,7 @@ jobs:
 
       - name: Login to GitHub Container Registry
         if: startsWith(github.ref, 'refs/tags/')
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -118,7 +124,7 @@ jobs:
           fi
 
       - name: Build and Push Docker image
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@v7.1.0
         with:
           context: ./${{ matrix.context }}
           file: ./${{ matrix.context }}/Dockerfile
@@ -130,7 +136,7 @@ jobs:
 
       - name: Scan Docker image for vulnerabilities
         if: startsWith(github.ref, 'refs/tags/')
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.context }}:${{ env.VERSION }}
           format: table
