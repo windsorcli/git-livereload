@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-set -ou pipefail
+# Robust bash: exit on error, unset, and failed pipes
+set -eou pipefail
 trap 'catch $? $LINENO' EXIT
 
 catch() {
   if [ "$1" != "0" ]; then
-    echo "Error $1 occurred on $2"
+    echo "Error $1 occurred on $2" >&2
   fi
 }
 
-RSYNC_EXCLUDE=${RSYNC_EXCLUDE:-}
-RSYNC_PROTECT=${RSYNC_PROTECT:-}
-RSYNC_INCLUDE=${RSYNC_INCLUDE:-}
+RSYNC_EXCLUDE="${RSYNC_EXCLUDE:-}"
+RSYNC_PROTECT="${RSYNC_PROTECT:-}"
+RSYNC_INCLUDE="${RSYNC_INCLUDE:-}"
+
+# WEBHOOK_URL is optional. If unset or empty, webhook is disabled.
+# Always use "${WEBHOOK_URL:-}" to avoid unbound variable errors.
+
 
 declare rsync_args=('--exclude=.git')
 declare protect_arg_str='--filter="P .git"'
@@ -184,13 +189,14 @@ handle_git_operations() {
     commit_sha=$(git rev-parse HEAD)
     echo "INFO: Last commit pushed: $commit_sha"
 
-    # Send webhook if URL is set
-    if [[ -n "$WEBHOOK_URL" ]]; then
+    # WEBHOOK_URL is optional; if unset or empty, skip webhook
+    if [[ -n "${WEBHOOK_URL:-}" ]]; then
       local curl_opts="-X POST -H 'Content-Type: application/json' -s -d '{\"event\":\"commit_pushed\",\"timestamp\":\"$timestamp\"}'"
-      if [[ "$VERIFY_SSL" == "false" ]]; then
+      if [[ "${VERIFY_SSL:-true}" == "false" ]]; then
         curl_opts="-k $curl_opts"
       fi
-      eval "curl $curl_opts \"$WEBHOOK_URL\""
+      # shellcheck disable=SC2086
+      eval "curl $curl_opts \"${WEBHOOK_URL}\""
       echo "Webhook sent"
     fi
   fi
