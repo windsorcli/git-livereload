@@ -1,5 +1,5 @@
 # Use an Alpine base image
-FROM alpine:3.23.4
+FROM alpine:3.24.0
 
 # Install git, git-daemon, rsync, openssh, nginx, and supervisor
 RUN apk update && apk add --no-cache bash git git-daemon rsync \
